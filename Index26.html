@@ -1,0 +1,292 @@
+<html><head><base href="https://websim.ai/"/>
+<title>Guitar Fretboard Scale Simulator with Custom Scales</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #f0f0f0;
+  }
+  
+  #fretboardContainer {
+    padding: 20px;
+    background-color: #704214;
+    border: 2px solid #4a2c0f;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  
+  #fretboard {
+    position: relative;
+    width: 95vw;
+    height: 300px;
+    background: linear-gradient(to right, #d2691e, #8b4513);
+    border: 1px solid #4a2c0f;
+  }
+  
+  .string {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #c0c0c0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  
+  .fret {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #c0c0c0;
+    box-shadow: 0 0 3px rgba(0,0,0,0.5);
+  }
+  
+  .note {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    border: 2px solid #333;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .scale-note {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .open-string {
+    left: -15px !important;
+    background-color: #FFA500;
+    color: #333;
+  }
+  
+  .fret-marker {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    opacity: 0.5;
+    transform: translateX(-50%);
+  }
+  
+  .string-name {
+    position: absolute;
+    left: -50px;
+    width: 20px;
+    text-align: right;
+    color: #f0f0f0;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  #controls, #customScaleControls {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  select, button, input {
+    font-size: 16px;
+    padding: 5px 10px;
+  }
+  
+  button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
+  
+  #customScaleName, #customScaleIntervals {
+    width: 200px;
+  }
+</style>
+</head>
+<body>
+  <h1>Guitar Fretboard Scale Simulator with Custom Scales</h1>
+  
+  <div id="fretboardContainer">
+    <div id="fretboard"></div>
+  </div>
+  
+  <div id="controls">
+    <select id="scaleSelect">
+      <option value="">Select a scale</option>
+      <option value="major">Major Scale</option>
+      <option value="minor">Minor Scale</option>
+      <option value="pentatonic">Pentatonic Scale</option>
+      <option value="blues">Blues Scale</option>
+    </select>
+    <select id="keySelect">
+      <option value="">Select a key</option>
+      <option value="C">C</option>
+      <option value="C#">C#</option>
+      <option value="D">D</option>
+      <option value="D#">D#</option>
+      <option value="E">E</option>
+      <option value="F">F</option>
+      <option value="F#">F#</option>
+      <option value="G">G</option>
+      <option value="G#">G#</option>
+      <option value="A">A</option>
+      <option value="A#">A#</option>
+      <option value="B">B</option>
+    </select>
+    <button onclick="showScale()">Show Scale</button>
+    <button onclick="clearFretboard()">Clear Fretboard</button>
+  </div>
+  
+  <div id="customScaleControls">
+    <input type="text" id="customScaleName" placeholder="Custom Scale Name">
+    <input type="text" id="customScaleIntervals" placeholder="Intervals (e.g. 0,2,4,5,7,9,11)">
+    <button onclick="addCustomScale()">Add Custom Scale</button>
+  </div>
+
+  <script>
+    const fretboard = document.getElementById('fretboard');
+    const scaleSelect = document.getElementById('scaleSelect');
+    const keySelect = document.getElementById('keySelect');
+    const customScaleName = document.getElementById('customScaleName');
+    const customScaleIntervals = document.getElementById('customScaleIntervals');
+    const containerWidth = fretboard.offsetWidth;
+    const containerHeight = fretboard.offsetHeight;
+    const stringSpacing = containerHeight / 7;
+    const fretSpacing = containerWidth / 13;
+    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const openStrings = ['E', 'B', 'G', 'D', 'A', 'E'];
+    
+    let scales = {
+      major: [0, 2, 4, 5, 7, 9, 11],
+      minor: [0, 2, 3, 5, 7, 8, 10],
+      pentatonic: [0, 2, 4, 7, 9],
+      blues: [0, 3, 5, 6, 7, 10]
+    };
+    
+    // Create strings and string names
+    for (let i = 1; i <= 6; i++) {
+      const string = document.createElement('div');
+      string.className = 'string';
+      string.style.top = `${i * stringSpacing}px`;
+      fretboard.appendChild(string);
+
+      const stringName = document.createElement('div');
+      stringName.className = 'string-name';
+      stringName.textContent = openStrings[i - 1];
+      stringName.style.top = `${i * stringSpacing - 10}px`;
+      fretboard.parentElement.appendChild(stringName);
+    }
+    
+    // Create frets
+    for (let i = 0; i <= 12; i++) {
+      const fret = document.createElement('div');
+      fret.className = 'fret';
+      fret.style.left = `${i * fretSpacing}px`;
+      fretboard.appendChild(fret);
+    }
+    
+    // Add fret markers
+    [3, 5, 7, 9, 12].forEach(fret => {
+      const marker = document.createElement('div');
+      marker.className = 'fret-marker';
+      marker.style.left = `${(fret - 0.5) * fretSpacing}px`;
+      marker.style.bottom = '-30px';
+      fretboard.appendChild(marker);
+      
+      if (fret === 12) {
+        const secondMarker = marker.cloneNode();
+        secondMarker.style.bottom = '-60px';
+        fretboard.appendChild(secondMarker);
+      }
+    });
+    
+    function showScale() {
+      const scaleType = scaleSelect.value;
+      const key = keySelect.value;
+      
+      if (!scaleType || !key) {
+        alert("Please select both a scale and a key.");
+        return;
+      }
+      
+      clearFretboard();
+      
+      const keyIndex = notes.indexOf(key);
+      const scaleNotes = scales[scaleType].map(interval => notes[(keyIndex + interval) % 12]);
+      
+      for (let string = 0; string < 6; string++) {
+        const openStringNote = openStrings[string];
+        const openStringIndex = notes.indexOf(openStringNote);
+        
+        // Add open string note
+        const openNote = document.createElement('div');
+        openNote.className = 'note open-string';
+        openNote.style.top = `${(string + 1) * stringSpacing}px`;
+        openNote.textContent = openStringNote;
+        if (scaleNotes.includes(openStringNote)) {
+          openNote.classList.add('scale-note');
+        }
+        fretboard.appendChild(openNote);
+        
+        for (let fret = 1; fret <= 12; fret++) {
+          const noteIndex = (openStringIndex + fret) % 12;
+          const noteName = notes[noteIndex];
+          
+          if (scaleNotes.includes(noteName)) {
+            const note = document.createElement('div');
+            note.className = 'note scale-note';
+            note.style.left = `${(fret - 0.5) * fretSpacing}px`;
+            note.style.top = `${(string + 1) * stringSpacing}px`;
+            note.textContent = noteName;
+            fretboard.appendChild(note);
+          }
+        }
+      }
+    }
+    
+    function clearFretboard() {
+      const notes = fretboard.querySelectorAll('.note');
+      notes.forEach(note => note.remove());
+    }
+    
+    function addCustomScale() {
+      const name = customScaleName.value.trim();
+      const intervals = customScaleIntervals.value.split(',').map(interval => parseInt(interval.trim()));
+      
+      if (!name || intervals.length === 0 || intervals.some(isNaN)) {
+        alert("Please enter a valid scale name and intervals.");
+        return;
+      }
+      
+      scales[name] = intervals;
+      
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      scaleSelect.appendChild(option);
+      
+      customScaleName.value = '';
+      customScaleIntervals.value = '';
+      
+      alert(`Custom scale "${name}" has been added!`);
+    }
+  </script>
+</body></html>
